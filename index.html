@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vibra Studio — Générateur de vidéos Ziggy</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+        --bg: #0f0a1f; --bg-2: #1a1230; --panel: #1e1638; --panel-2: #251b45;
+        --border: #34255c; --border-soft: #2a1e4d;
+        --ink: #f0e9ff; --ink-dim: #a89cc7; --ink-faint: #6b5f8c;
+        --gold: #ffd166; --gold-soft: #ffe4a3;
+        --purple: #b28dff; --violet: #8b5cf6; --pink: #ff7eb6;
+        --green: #6ee7a7; --blue: #7dd3fc;
+        --success: #4ade80; --error: #f87171; --warn: #fbbf24; --info: #60a5fa;
+        --radius: 14px; --shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: radial-gradient(ellipse at top, #1e1238 0%, #0f0a1f 50%, #080514 100%);
+        background-attachment: fixed; color: var(--ink); min-height: 100vh;
+        padding: 1.25rem 1rem 6rem; font-size: 15px; line-height: 1.5;
+        max-width: 900px; margin: 0 auto; position: relative; overflow-x: hidden;
+    }
+    body::before {
+        content: ''; position: fixed; inset: 0;
+        background-image:
+            radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.7), transparent),
+            radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.5), transparent),
+            radial-gradient(1px 1px at 80% 20%, rgba(255,255,255,0.6), transparent),
+            radial-gradient(1px 1px at 35% 85%, rgba(255,255,255,0.4), transparent),
+            radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.5), transparent);
+        background-size: 550px 550px, 350px 350px, 250px 250px, 400px 400px, 300px 300px;
+        pointer-events: none; z-index: 0;
+        animation: starDrift 120s linear infinite;
+    }
+    @keyframes starDrift { to { background-position: 550px 550px, -350px 350px, 250px -250px, -400px 400px, 300px -300px; } }
+    body > * { position: relative; z-index: 1; }
+
+    header { margin-bottom: 1.5rem; text-align: center; padding: 1rem 0.5rem; }
+    .logo-mark { font-size: 2.5rem; margin-bottom: 0.3rem; filter: drop-shadow(0 0 20px rgba(255,209,102,0.6)); animation: twinkle 3s ease-in-out infinite; }
+    @keyframes twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.85; transform: scale(1.05); } }
+    h1 {
+        font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.3rem;
+        background: linear-gradient(135deg, var(--gold) 0%, var(--pink) 50%, var(--purple) 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .subtitle { font-size: 0.82rem; color: var(--ink-dim); font-style: italic; }
+    .universe-badge {
+        display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.7rem;
+        background: linear-gradient(135deg, var(--violet), var(--purple));
+        color: #fff; border-radius: 20px; font-size: 0.68rem; font-weight: 600;
+        letter-spacing: 0.05em; text-transform: uppercase;
+        box-shadow: 0 4px 16px rgba(139,92,246,0.4);
+    }
+
+    .toast {
+        position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%) translateY(-100px);
+        background: var(--panel); color: var(--ink); padding: 0.85rem 1.4rem;
+        border-radius: 12px; font-size: 0.85rem; font-weight: 500;
+        box-shadow: var(--shadow); border: 1px solid var(--border);
+        z-index: 1000; opacity: 0; transition: transform 0.35s ease, opacity 0.35s ease;
+        max-width: 90vw; text-align: center; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { border-color: var(--success); box-shadow: 0 0 24px rgba(74,222,128,0.3); }
+    .toast.error { border-color: var(--error); box-shadow: 0 0 24px rgba(248,113,113,0.3); }
+    .toast.warn { border-color: var(--warn); box-shadow: 0 0 24px rgba(251,191,36,0.3); }
+    .toast .toast-icon { font-size: 1rem; }
+
+    .info-banner {
+        background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(255,126,182,0.1));
+        border-left: 3px solid var(--purple); padding: 0.85rem 1rem;
+        border-radius: 10px; font-size: 0.78rem; color: var(--ink-dim);
+        margin-bottom: 1rem; line-height: 1.55;
+    }
+    .info-banner strong { color: var(--ink); }
+
+    .section { background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--radius); margin-bottom: 1rem; overflow: hidden; transition: border-color 0.3s; }
+    .section:hover { border-color: var(--border); }
+    .section-header { padding: 0.95rem 1.1rem; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+    .section-header:active { background: var(--panel-2); }
+    .section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink); font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .section-title .badge { display: inline-block; padding: 0.15rem 0.5rem; background: var(--violet); color: #fff; border-radius: 10px; font-size: 0.6rem; letter-spacing: 0.05em; font-weight: 700; }
+    .section-title .badge.gold { background: var(--gold); color: #1a1230; }
+    .section-title .badge.ok { background: var(--success); color: #0f0a1f; }
+    .section-header .chevron { font-size: 0.7rem; color: var(--ink-faint); transition: transform 0.25s; }
+    .section.open .section-header .chevron { transform: rotate(180deg); }
+    .section-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+    .section.open .section-body { max-height: 6000px; }
+    .section-content { padding: 0 1.1rem 1.1rem; }
+
+    .api-panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.2rem; margin-bottom: 1rem; transition: border-color 0.3s; }
+    .api-panel.ok { border-color: var(--success); box-shadow: 0 0 24px rgba(74,222,128,0.15); }
+    .api-key-input {
+        width: 100%; padding: 0.85rem 1rem; border-radius: 10px; border: 1px solid var(--border);
+        background: var(--bg-2); color: var(--ink); font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: 0.85rem; margin-bottom: 0.6rem;
+    }
+    .api-key-input:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+    .api-save-btn {
+        width: 100%; padding: 0.8rem 1.2rem; border-radius: 10px; border: none;
+        background: linear-gradient(135deg, var(--violet), var(--purple)); color: #fff;
+        font-size: 0.9rem; font-weight: 700; font-family: inherit; cursor: pointer;
+        transition: opacity 0.2s, transform 0.1s; margin-bottom: 0.6rem;
+        box-shadow: 0 4px 16px rgba(139,92,246,0.3);
+    }
+    .api-save-btn:active { transform: scale(0.98); }
+    .api-status-line {
+        font-size: 0.75rem; padding: 0.55rem 0.85rem; border-radius: 8px; margin-bottom: 0.5rem;
+        display: flex; align-items: center; gap: 0.5rem; background: var(--panel-2);
+        color: var(--ink-dim); transition: all 0.3s;
+    }
+    .api-status-line.ok { background: rgba(74,222,128,0.12); color: var(--success); font-weight: 600; border: 1px solid rgba(74,222,128,0.3); }
+    .api-status-line .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); flex-shrink: 0; transition: background 0.3s; }
+    .api-status-line.ok .status-dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .api-hint { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.4rem; }
+    .api-hint a { color: var(--gold); text-decoration: underline; }
+
+    .upload-zone {
+        border: 2px dashed var(--border); border-radius: var(--radius);
+        padding: 2rem 1rem; text-align: center; cursor: pointer;
+        transition: border-color 0.2s, background 0.2s; margin-bottom: 1rem;
+        background: var(--bg-2);
+    }
+    .upload-zone:active { border-color: var(--purple); background: var(--panel-2); }
+    .upload-zone.loading { pointer-events: none; opacity: 0.6; }
+    .upload-zone input[type="file"] { display: none; }
+    .upload-icon { font-size: 2.2rem; margin-bottom: 0.6rem; opacity: 0.7; }
+    .upload-text { font-size: 0.95rem; color: var(--ink); margin-bottom: 0.2rem; font-weight: 600; }
+    .upload-hint { font-size: 0.75rem; color: var(--ink-dim); }
+
+    .images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.5rem; margin-bottom: 1rem; }
+    .image-card { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: var(--bg-2); aspect-ratio: 9/16; transition: transform 0.2s; }
+    .image-card:hover { transform: scale(1.02); }
+    .image-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .image-card .remove-btn {
+        position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: #fff;
+        border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 11px;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+
+    .characters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.7rem; }
+    .character-card {
+        padding: 0.85rem 0.9rem; border-radius: 12px;
+        border: 2px solid var(--border-soft); background: var(--bg-2);
+        cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .character-card:active { transform: scale(0.97); }
+    .character-card.selected { border-color: var(--gold); background: linear-gradient(135deg, var(--panel-2), var(--panel)); box-shadow: 0 0 20px rgba(255,209,102,0.2); }
+    .character-card .c-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .character-card .c-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; }
+    .character-card .c-role { font-size: 0.65rem; color: var(--ink-dim); margin-top: 0.15rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .character-card .c-check { position: absolute; top: 0.5rem; right: 0.5rem; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); color: #1a1230; display: none; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 900; }
+    .character-card.selected .c-check { display: flex; }
+
+    .scenes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.6rem; }
+    .scene-type-card {
+        padding: 0.8rem 0.9rem; border-radius: 10px;
+        border: 1px solid var(--border-soft); background: var(--bg-2);
+        cursor: pointer; transition: all 0.2s;
+    }
+    .scene-type-card:active { transform: scale(0.97); }
+    .scene-type-card.selected { border-color: var(--purple); background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(178,141,255,0.05)); box-shadow: 0 0 16px rgba(139,92,246,0.2); }
+    .scene-type-card .st-emoji { font-size: 1.3rem; margin-bottom: 0.3rem; }
+    .scene-type-card .st-name { font-size: 0.8rem; font-weight: 700; }
+    .scene-type-card .st-desc { font-size: 0.65rem; color: var(--ink-dim); margin-top: 0.15rem; line-height: 1.3; }
+
+    .format-toggle { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .format-btn {
+        flex: 1; padding: 0.7rem; border-radius: 10px;
+        border: 1px solid var(--border); background: var(--bg-2);
+        color: var(--ink-dim); font-size: 0.78rem; font-weight: 600;
+        font-family: inherit; cursor: pointer; transition: all 0.2s;
+    }
+    .format-btn.active { background: linear-gradient(135deg, var(--violet), var(--purple)); color: #fff; border-color: transparent; box-shadow: 0 4px 16px rgba(139,92,246,0.3); }
+    .format-btn .ratio { display: block; font-size: 0.65rem; opacity: 0.7; margin-top: 0.1rem; }
+
+    .control-row { margin-bottom: 0.9rem; }
+    .control-label { display: block; font-size: 0.72rem; color: var(--ink-dim); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    select {
+        width: 100%; padding: 0.75rem 1rem; border-radius: 10px;
+        border: 1px solid var(--border); background: var(--bg-2);
+        color: var(--ink); font-family: inherit; font-size: 0.88rem;
+        -webkit-appearance: none; appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23a89cc7' d='M0 0l5 6 5-6z'/></svg>");
+        background-repeat: no-repeat; background-position: right 1rem center;
+        padding-right: 2.5rem;
+    }
+    select:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+
+    textarea {
+        width: 100%; padding: 0.8rem 1rem; border-radius: 10px;
+        border: 1px solid var(--border); background: var(--bg-2);
+        color: var(--ink); font-family: inherit; font-size: 0.88rem;
+        min-height: 90px; resize: vertical; line-height: 1.5;
+    }
+    textarea:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+
+    .btn-primary {
+        width: 100%; padding: 1.1rem; border-radius: var(--radius); border: none;
+        background: linear-gradient(135deg, var(--violet), var(--purple));
+        color: #fff; font-size: 1rem; font-weight: 700; font-family: inherit;
+        cursor: pointer; transition: all 0.2s; margin-bottom: 0.8rem;
+        box-shadow: 0 6px 24px rgba(139,92,246,0.35);
+    }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+
+    .btn-stop {
+        width: 100%; padding: 0.9rem; border-radius: var(--radius);
+        border: 1px solid rgba(248,113,113,0.4); background: var(--panel);
+        color: var(--error); font-size: 0.9rem; font-weight: 700;
+        font-family: inherit; cursor: pointer; margin-bottom: 1rem;
+        display: none; transition: all 0.2s;
+    }
+    .btn-stop.visible { display: block; }
+    .btn-stop:active { transform: scale(0.98); }
+
+    .queue { margin-top: 1rem; }
+    .queue-summary {
+        background: var(--panel); border: 1px solid var(--border-soft);
+        border-radius: 10px; padding: 0.7rem 0.9rem; margin-bottom: 0.6rem;
+        font-size: 0.78rem; display: flex; justify-content: space-between;
+        align-items: center; flex-wrap: wrap; gap: 0.4rem;
+    }
+    .queue-summary .progress-text { color: var(--ink); font-weight: 700; }
+    .queue-summary .eta-text { color: var(--ink-dim); }
+    .queue-item {
+        display: flex; align-items: center; gap: 0.8rem;
+        padding: 0.7rem 0.8rem; border-radius: 10px;
+        border: 1px solid var(--border-soft); margin-bottom: 0.4rem;
+        background: var(--panel); transition: border-color 0.3s;
+        font-size: 0.82rem;
+    }
+    .queue-item.pending { opacity: 0.5; }
+    .queue-item.creating { border-color: var(--warn); }
+    .queue-item.processing { border-color: var(--purple); box-shadow: 0 0 12px rgba(139,92,246,0.15); }
+    .queue-item.done { border-color: var(--success); }
+    .queue-item.failed { border-color: var(--error); }
+    .queue-item .q-icon { font-size: 1rem; width: 1.5rem; text-align: center; flex-shrink: 0; }
+    .queue-item .q-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .queue-item .q-status { font-size: 0.72rem; color: var(--ink-dim); text-align: right; flex-shrink: 0; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .gallery { margin-top: 1.5rem; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.8rem; }
+    .gallery-item { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: #000; animation: fadeIn 0.4s ease; }
+    .gallery-item video { width: 100%; display: block; aspect-ratio: 9/16; object-fit: cover; }
+    .gallery-item .g-caption { padding: 0.4rem 0.6rem; background: var(--panel); font-size: 0.7rem; color: var(--ink-dim); }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .status-bar {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: var(--panel); color: var(--ink); padding: 0.7rem 1rem;
+        font-size: 0.78rem; display: flex; align-items: center; gap: 0.6rem;
+        transform: translateY(100%); transition: transform 0.3s;
+        z-index: 100; border-top: 1px solid var(--border);
+    }
+    .status-bar.visible { transform: translateY(0); }
+    .status-bar .spinner { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .stat-line { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.5rem; padding: 0.5rem 0.7rem; background: var(--panel-2); border-radius: 8px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.3rem; border: 1px solid var(--border-soft); }
+
+    .wake-status { font-size: 0.72rem; padding: 0.55rem 0.75rem; border-radius: 8px; margin-top: 0.4rem; display: flex; justify-content: space-between; align-items: center; background: rgba(96,165,250,0.1); color: var(--info); flex-wrap: wrap; gap: 0.4rem; border: 1px solid rgba(96,165,250,0.2); }
+    .wake-status.active { background: rgba(74,222,128,0.1); color: var(--success); border-color: rgba(74,222,128,0.3); }
+    .wake-status.warn { background: rgba(251,191,36,0.1); color: var(--warn); border-color: rgba(251,191,36,0.3); }
+    .wake-status button { background: transparent; border: 1px solid currentColor; color: inherit; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.68rem; cursor: pointer; font-family: inherit; }
+    .wake-status button:active { opacity: 0.6; }
+
+    #noSleepCanvas { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; z-index: -1; }
+    #noSleepVideo { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; z-index: -1; }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo-mark">✨</div>
+    <h1>Vibra Studio</h1>
+    <p class="subtitle">Générateur de vidéos · Ziggy — The Little Explorer</p>
+    <span class="universe-badge">🎬 Génération réelle par IA</span>
+</header>
+
+<div class="toast" id="toast">
+    <span class="toast-icon" id="toast-icon">✓</span>
+    <span id="toast-text">Message</span>
+</div>
+
+<div class="info-banner">
+    <strong>🎬 Comment ça marche :</strong> Ajoute tes images, choisis un <strong>personnage Vibra</strong>,
+    un <strong>type de scène</strong> et un <strong>format</strong>. L'IA construit le prompt complet
+    (master prompt du personnage + règles Vibra + mouvement + caméra) et <strong>génère la vidéo</strong> automatiquement.
+</div>
+
+<!-- API -->
+<div class="api-panel" id="api-panel">
+    <input type="password" class="api-key-input" id="api-key-input" placeholder="Colle ta clé API Agnes ici (sk-...)" autocomplete="off" spellcheck="false">
+    <button type="button" class="api-save-btn" id="api-save-btn">Enregistrer la clé</button>
+    <div class="api-status-line" id="api-status-line">
+        <span class="status-dot"></span>
+        <span id="api-status-text">Aucune clé API enregistrée</span>
+    </div>
+    <div class="api-hint">
+        Clé gratuite sur <a href="https://platform.agnes-ai.com" target="_blank">platform.agnes-ai.com</a> → Settings → API Keys
+    </div>
+    <div class="stat-line" id="stat-line">
+        <span>📊 Vitesse : <span id="stat-speed">en attente</span></span>
+        <span id="stat-samples">0 génération</span>
+    </div>
+    <div class="wake-status" id="wake-status">
+        <span id="wake-status-text">💤 Veille automatique</span>
+        <button type="button" id="wake-toggle-btn">Garder l'écran allumé</button>
+    </div>
+</div>
+
+<!-- UPLOAD -->
+<div class="upload-zone" id="upload-zone">
+    <input type="file" id="file-input" accept="image/*" multiple>
+    <div class="upload-icon">＋</div>
+    <div class="upload-text">Ajoute tes images</div>
+    <div class="upload-hint">Chaque image deviendra une vidéo Vibra</div>
+</div>
+<div class="images-grid" id="images-grid"></div>
+
+<!-- PERSONNAGES -->
+<div class="section open" id="sec-chars">
+    <div class="section-header" data-toggle="sec-chars">
+        <span class="section-title">👽 Personnages Vibra <span class="badge gold">requis</span></span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <div class="characters-grid" id="characters-grid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TYPE DE SCÈNE -->
+<div class="section open" id="sec-scene">
+    <div class="section-header" data-toggle="sec-scene">
+        <span class="section-title">🎬 Type de scène</span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <div class="scenes-grid" id="scenes-grid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- FORMAT -->
+<div class="section open" id="sec-format">
+    <div class="section-header" data-toggle="sec-format">
+        <span class="section-title">📐 Format & Durée</span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <div class="control-row">
+                <label class="control-label">Format de diffusion</label>
+                <div class="format-toggle" id="format-toggle">
+                    <button type="button" class="format-btn active" data-format="youtube">
+                        📺 YouTube <span class="ratio">16:9 horizontal</span>
+                    </button>
+                    <button type="button" class="format-btn" data-format="tiktok">
+                        📱 TikTok <span class="ratio">9:16 vertical</span>
+                    </button>
+                </div>
+            </div>
+            <div class="control-row">
+                <label class="control-label">Durée de la vidéo</label>
+                <select id="duration-select">
+                    <option value="121">5 secondes</option>
+                    <option value="153" selected>6,4 secondes (recommandé)</option>
+                    <option value="241">10 secondes</option>
+                </select>
+            </div>
+            <div class="control-row">
+                <label class="control-label">Intensité du mouvement</label>
+                <select id="intensity-select">
+                    <option value="subtle">Subtile</option>
+                    <option value="moderate" selected>Modérée (recommandé)</option>
+                    <option value="strong">Forte</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PROMPT PERSONNALISÉ -->
+<div class="section" id="sec-prompt">
+    <div class="section-header" data-toggle="sec-prompt">
+        <span class="section-title">✍️ Prompt personnalisé <span class="badge">optionnel</span></span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <textarea id="custom-prompt" placeholder="Décris une scène spécifique (optionnel). Ex: Ziggy découvre une fleur lumineuse dans la forêt magique…"></textarea>
+            <div class="api-hint" style="margin-top:0.5rem;">
+                💡 Si tu laisses vide, le prompt est construit automatiquement à partir du personnage + type de scène + règles Vibra.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BOUTON GÉNÉRER -->
+<button type="button" class="btn-primary" id="generate-btn" disabled>
+    🎬 Générer les vidéos
+</button>
+
+<button type="button" class="btn-stop" id="stop-btn">
+    ⏹ Arrêter la génération
+</button>
+
+<div class="queue" id="queue" style="display:none;"></div>
+
+<div class="gallery" id="gallery" style="display:none;">
+    <div class="section-title" style="margin-bottom:0.8rem;">Vidéos générées</div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+</div>
+
+<div class="status-bar" id="status-bar">
+    <div class="spinner"></div>
+    <span id="status-text">Préparation…</span>
+</div>
+
+<canvas id="noSleepCanvas" width="2" height="2"></canvas>
+<video id="noSleepVideo" playsinline muted loop></video>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CONFIGURATION API
+// ══════════════════════════════════════════════════════════════════
+const API_BASE = 'https://apihub.agnes-ai.com/v1';
+const POLL_BASE = 'https://apihub.agnes-ai.com/agnesapi';
+const MODEL_VIDEO = 'agnes-video-v2.0';
+const FRAME_RATE = 24;
+
+let createIntervalMs = 62000;
+const CREATE_INTERVAL_MIN = 62000;
+const CREATE_INTERVAL_MAX = 90000;
+const CREATE_INTERVAL_SAFE = 75000;
+const POLL_INTERVAL_SEC = 8;
+const MAX_POLL_ATTEMPTS = 100;
