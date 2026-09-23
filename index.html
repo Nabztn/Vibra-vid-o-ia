@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vibra Studio — Générateur de vidéos Ziggy</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+        --bg: #0f0a1f; --bg-2: #1a1230; --panel: #1e1638; --panel-2: #251b45;
+        --border: #34255c; --border-soft: #2a1e4d;
+        --ink: #f0e9ff; --ink-dim: #a89cc7; --ink-faint: #6b5f8c;
+        --gold: #ffd166; --gold-soft: #ffe4a3;
+        --purple: #b28dff; --violet: #8b5cf6; --pink: #ff7eb6;
+        --green: #6ee7a7; --blue: #7dd3fc;
+        --success: #4ade80; --error: #f87171; --warn: #fbbf24; --info: #60a5fa;
+        --radius: 14px; --shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: radial-gradient(ellipse at top, #1e1238 0%, #0f0a1f 50%, #080514 100%);
+        background-attachment: fixed; color: var(--ink); min-height: 100vh;
+        padding: 1.25rem 1rem 6rem; font-size: 15px; line-height: 1.5;
+        max-width: 900px; margin: 0 auto; position: relative; overflow-x: hidden;
+    }
+    body::before {
+        content: ''; position: fixed; inset: 0;
+        background-image:
+            radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.7), transparent),
+            radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.5), transparent),
+            radial-gradient(1px 1px at 80% 20%, rgba(255,255,255,0.6), transparent),
+            radial-gradient(1px 1px at 35% 85%, rgba(255,255,255,0.4), transparent),
+            radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.5), transparent);
+        background-size: 550px 550px, 350px 350px, 250px 250px, 400px 400px, 300px 300px;
+        pointer-events: none; z-index: 0;
+        animation: starDrift 120s linear infinite;
+    }
+    @keyframes starDrift { to { background-position: 550px 550px, -350px 350px, 250px -250px, -400px 400px, 300px -300px; } }
+    body > * { position: relative; z-index: 1; }
+
+    header { margin-bottom: 1.5rem; text-align: center; padding: 1rem 0.5rem; }
+    .logo-mark { font-size: 2.5rem; margin-bottom: 0.3rem; filter: drop-shadow(0 0 20px rgba(255,209,102,0.6)); animation: twinkle 3s ease-in-out infinite; }
+    @keyframes twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.85; transform: scale(1.05); } }
+    h1 {
+        font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.3rem;
+        background: linear-gradient(135deg, var(--gold) 0%, var(--pink) 50%, var(--purple) 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .subtitle { font-size: 0.82rem; color: var(--ink-dim); font-style: italic; }
+    .universe-badge {
+        display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.7rem;
+        background: linear-gradient(135deg, var(--violet), var(--purple));
+        color: #fff; border-radius: 20px; font-size: 0.68rem; font-weight: 600;
+        letter-spacing: 0.05em; text-transform: uppercase;
+        box-shadow: 0 4px 16px rgba(139,92,246,0.4);
+    }
+
+    .toast {
+        position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%) translateY(-100px);
+        background: var(--panel); color: var(--ink); padding: 0.85rem 1.4rem;
+        border-radius: 12px; font-size: 0.85rem; font-weight: 500;
+        box-shadow: var(--shadow); border: 1px solid var(--border);
+        z-index: 1000; opacity: 0; transition: transform 0.35s ease, opacity 0.35s ease;
+        max-width: 90vw; text-align: center; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { border-color: var(--success); box-shadow: 0 0 24px rgba(74,222,128,0.3); }
+    .toast.error { border-color: var(--error); box-shadow: 0 0 24px rgba(248,113,113,0.3); }
+    .toast.warn { border-color: var(--warn); box-shadow: 0 0 24px rgba(251,191,36,0.3); }
+    .toast .toast-icon { font-size: 1rem; }
+
+    .info-banner {
+        background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(255,126,182,0.1));
+        border-left: 3px solid var(--purple); padding: 0.85rem 1rem;
+        border-radius: 10px; font-size: 0.78rem; color: var(--ink-dim);
+        margin-bottom: 1rem; line-height: 1.55;
+    }
+    .info-banner strong { color: var(--ink); }
+
+    .section { background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--radius); margin-bottom: 1rem; overflow: hidden; transition: border-color 0.3s; }
+    .section:hover { border-color: var(--border); }
+    .section-header { padding: 0.95rem 1.1rem; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+    .section-header:active { background: var(--panel-2); }
+    .section-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink); font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+    .section-title .badge { display: inline-block; padding: 0.15rem 0.5rem; background: var(--violet); color: #fff; border-radius: 10px; font-size: 0.6rem; letter-spacing: 0.05em; font-weight: 700; }
+    .section-title .badge.gold { background: var(--gold); color: #1a1230; }
+    .section-title .badge.ok { background: var(--success); color: #0f0a1f; }
+    .section-header .chevron { font-size: 0.7rem; color: var(--ink-faint); transition: transform 0.25s; }
+    .section.open .section-header .chevron { transform: rotate(180deg); }
+    .section-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+    .section.open .section-body { max-height: 6000px; }
+    .section-content { padding: 0 1.1rem 1.1rem; }
+
+    .api-panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.2rem; margin-bottom: 1rem; transition: border-color 0.3s; }
+    .api-panel.ok { border-color: var(--success); box-shadow: 0 0 24px rgba(74,222,128,0.15); }
+    .api-key-input {
+        width: 100%; padding: 0.85rem 1rem; border-radius: 10px; border: 1px solid var(--border);
+        background: var(--bg-2); color: var(--ink); font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: 0.85rem; margin-bottom: 0.6rem;
+    }
+    .api-key-input:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+    .api-save-btn {
+        width: 100%; padding: 0.8rem 1.2rem; border-radius: 10px; border: none;
+        background: linear-gradient(135deg, var(--violet), var(--purple)); color: #fff;
+        font-size: 0.9rem; font-weight: 700; font-family: inherit; cursor: pointer;
+        transition: opacity 0.2s, transform 0.1s; margin-bottom: 0.6rem;
+        box-shadow: 0 4px 16px rgba(139,92,246,0.3);
+    }
+    .api-save-btn:active { transform: scale(0.98); }
+    .api-status-line {
+        font-size: 0.75rem; padding: 0.55rem 0.85rem; border-radius: 8px; margin-bottom: 0.5rem;
+        display: flex; align-items: center; gap: 0.5rem; background: var(--panel-2);
+        color: var(--ink-dim); transition: all 0.3s;
+    }
+    .api-status-line.ok { background: rgba(74,222,128,0.12); color: var(--success); font-weight: 600; border: 1px solid rgba(74,222,128,0.3); }
+    .api-status-line .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-faint); flex-shrink: 0; transition: background 0.3s; }
+    .api-status-line.ok .status-dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .api-hint { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.4rem; }
+    .api-hint a { color: var(--gold); text-decoration: underline; }
+
+    .upload-zone {
+        border: 2px dashed var(--border); border-radius: var(--radius);
+        padding: 2rem 1rem; text-align: center; cursor: pointer;
+        transition: border-color 0.2s, background 0.2s; margin-bottom: 1rem;
+        background: var(--bg-2);
+    }
+    .upload-zone:active { border-color: var(--purple); background: var(--panel-2); }
+    .upload-zone.loading { pointer-events: none; opacity: 0.6; }
+    .upload-zone input[type="file"] { display: none; }
+    .upload-icon { font-size: 2.2rem; margin-bottom: 0.6rem; opacity: 0.7; }
+    .upload-text { font-size: 0.95rem; color: var(--ink); margin-bottom: 0.2rem; font-weight: 600; }
+    .upload-hint { font-size: 0.75rem; color: var(--ink-dim); }
+
+    .images-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.5rem; margin-bottom: 1rem; }
+    .image-card { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: var(--bg-2); aspect-ratio: 9/16; transition: transform 0.2s; }
+    .image-card:hover { transform: scale(1.02); }
+    .image-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .image-card .remove-btn {
+        position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: #fff;
+        border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 11px;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+
+    .characters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.7rem; }
+    .character-card {
+        padding: 0.85rem 0.9rem; border-radius: 12px;
+        border: 2px solid var(--border-soft); background: var(--bg-2);
+        cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .character-card:active { transform: scale(0.97); }
+    .character-card.selected { border-color: var(--gold); background: linear-gradient(135deg, var(--panel-2), var(--panel)); box-shadow: 0 0 20px rgba(255,209,102,0.2); }
+    .character-card .c-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .character-card .c-name { font-size: 0.85rem; font-weight: 700; line-height: 1.2; }
+    .character-card .c-role { font-size: 0.65rem; color: var(--ink-dim); margin-top: 0.15rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .character-card .c-check { position: absolute; top: 0.5rem; right: 0.5rem; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); color: #1a1230; display: none; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 900; }
+    .character-card.selected .c-check { display: flex; }
+
+    .scenes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.6rem; }
+    .scene-type-card {
+        padding: 0.8rem 0.9rem; border-radius: 10px;
+        border: 1px solid var(--border-soft); background: var(--bg-2);
+        cursor: pointer; transition: all 0.2s;
+    }
+    .scene-type-card:active { transform: scale(0.97); }
+    .scene-type-card.selected { border-color: var(--purple); background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(178,141,255,0.05)); box-shadow: 0 0 16px rgba(139,92,246,0.2); }
+    .scene-type-card .st-emoji { font-size: 1.3rem; margin-bottom: 0.3rem; }
+    .scene-type-card .st-name { font-size: 0.8rem; font-weight: 700; }
+    .scene-type-card .st-desc { font-size: 0.65rem; color: var(--ink-dim); margin-top: 0.15rem; line-height: 1.3; }
+
+    .format-toggle { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .format-btn {
+        flex: 1; padding: 0.7rem; border-radius: 10px;
+        border: 1px solid var(--border); background: var(--bg-2);
+        color: var(--ink-dim); font-size: 0.78rem; font-weight: 600;
+        font-family: inherit; cursor: pointer; transition: all 0.2s;
+    }
+    .format-btn.active { background: linear-gradient(135deg, var(--violet), var(--purple)); color: #fff; border-color: transparent; box-shadow: 0 4px 16px rgba(139,92,246,0.3); }
+    .format-btn .ratio { display: block; font-size: 0.65rem; opacity: 0.7; margin-top: 0.1rem; }
+
+    .control-row { margin-bottom: 0.9rem; }
+    .control-label { display: block; font-size: 0.72rem; color: var(--ink-dim); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    select {
+        width: 100%; padding: 0.75rem 1rem; border-radius: 10px;
+        border: 1px solid var(--border); background: var(--bg-2);
+        color: var(--ink); font-family: inherit; font-size: 0.88rem;
+        -webkit-appearance: none; appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23a89cc7' d='M0 0l5 6 5-6z'/></svg>");
+        background-repeat: no-repeat; background-position: right 1rem center;
+        padding-right: 2.5rem;
+    }
+    select:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+
+    textarea {
+        width: 100%; padding: 0.8rem 1rem; border-radius: 10px;
+        border: 1px solid var(--border); background: var(--bg-2);
+        color: var(--ink); font-family: inherit; font-size: 0.88rem;
+        min-height: 90px; resize: vertical; line-height: 1.5;
+    }
+    textarea:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139,92,246,0.15); }
+
+    .btn-primary {
+        width: 100%; padding: 1.1rem; border-radius: var(--radius); border: none;
+        background: linear-gradient(135deg, var(--violet), var(--purple));
+        color: #fff; font-size: 1rem; font-weight: 700; font-family: inherit;
+        cursor: pointer; transition: all 0.2s; margin-bottom: 0.8rem;
+        box-shadow: 0 6px 24px rgba(139,92,246,0.35);
+    }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+
+    .btn-stop {
+        width: 100%; padding: 0.9rem; border-radius: var(--radius);
+        border: 1px solid rgba(248,113,113,0.4); background: var(--panel);
+        color: var(--error); font-size: 0.9rem; font-weight: 700;
+        font-family: inherit; cursor: pointer; margin-bottom: 1rem;
+        display: none; transition: all 0.2s;
+    }
+    .btn-stop.visible { display: block; }
+    .btn-stop:active { transform: scale(0.98); }
+
+    .queue { margin-top: 1rem; }
+    .queue-summary {
+        background: var(--panel); border: 1px solid var(--border-soft);
+        border-radius: 10px; padding: 0.7rem 0.9rem; margin-bottom: 0.6rem;
+        font-size: 0.78rem; display: flex; justify-content: space-between;
+        align-items: center; flex-wrap: wrap; gap: 0.4rem;
+    }
+    .queue-summary .progress-text { color: var(--ink); font-weight: 700; }
+    .queue-summary .eta-text { color: var(--ink-dim); }
+    .queue-item {
+        display: flex; align-items: center; gap: 0.8rem;
+        padding: 0.7rem 0.8rem; border-radius: 10px;
+        border: 1px solid var(--border-soft); margin-bottom: 0.4rem;
+        background: var(--panel); transition: border-color 0.3s;
+        font-size: 0.82rem;
+    }
+    .queue-item.pending { opacity: 0.5; }
+    .queue-item.creating { border-color: var(--warn); }
+    .queue-item.processing { border-color: var(--purple); box-shadow: 0 0 12px rgba(139,92,246,0.15); }
+    .queue-item.done { border-color: var(--success); }
+    .queue-item.failed { border-color: var(--error); }
+    .queue-item .q-icon { font-size: 1rem; width: 1.5rem; text-align: center; flex-shrink: 0; }
+    .queue-item .q-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .queue-item .q-status { font-size: 0.72rem; color: var(--ink-dim); text-align: right; flex-shrink: 0; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .gallery { margin-top: 1.5rem; }
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.8rem; }
+    .gallery-item { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: #000; animation: fadeIn 0.4s ease; }
+    .gallery-item video { width: 100%; display: block; aspect-ratio: 9/16; object-fit: cover; }
+    .gallery-item .g-caption { padding: 0.4rem 0.6rem; background: var(--panel); font-size: 0.7rem; color: var(--ink-dim); }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .status-bar {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: var(--panel); color: var(--ink); padding: 0.7rem 1rem;
+        font-size: 0.78rem; display: flex; align-items: center; gap: 0.6rem;
+        transform: translateY(100%); transition: transform 0.3s;
+        z-index: 100; border-top: 1px solid var(--border);
+    }
+    .status-bar.visible { transform: translateY(0); }
+    .status-bar .spinner { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .stat-line { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.5rem; padding: 0.5rem 0.7rem; background: var(--panel-2); border-radius: 8px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.3rem; border: 1px solid var(--border-soft); }
+
+    .wake-status { font-size: 0.72rem; padding: 0.55rem 0.75rem; border-radius: 8px; margin-top: 0.4rem; display: flex; justify-content: space-between; align-items: center; background: rgba(96,165,250,0.1); color: var(--info); flex-wrap: wrap; gap: 0.4rem; border: 1px solid rgba(96,165,250,0.2); }
+    .wake-status.active { background: rgba(74,222,128,0.1); color: var(--success); border-color: rgba(74,222,128,0.3); }
+    .wake-status.warn { background: rgba(251,191,36,0.1); color: var(--warn); border-color: rgba(251,191,36,0.3); }
+    .wake-status button { background: transparent; border: 1px solid currentColor; color: inherit; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.68rem; cursor: pointer; font-family: inherit; }
+    .wake-status button:active { opacity: 0.6; }
+
+    #noSleepCanvas { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; z-index: -1; }
+    #noSleepVideo { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; z-index: -1; }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo-mark">✨</div>
+    <h1>Vibra Studio</h1>
+    <p class="subtitle">Générateur de vidéos · Ziggy — The Little Explorer</p>
+    <span class="universe-badge">🎬 Génération réelle par IA</span>
+</header>
+
+<div class="toast" id="toast">
+    <span class="toast-icon" id="toast-icon">✓</span>
+    <span id="toast-text">Message</span>
+</div>
+
+<div class="info-banner">
+    <strong>🎬 Comment ça marche :</strong> Ajoute tes images, choisis un <strong>personnage Vibra</strong>,
+    un <strong>type de scène</strong> et un <strong>format</strong>. L'IA construit le prompt complet
+    (master prompt du personnage + règles Vibra + mouvement + caméra) et <strong>génère la vidéo</strong> automatiquement.
+</div>
+
+<!-- API -->
+<div class="api-panel" id="api-panel">
+    <input type="password" class="api-key-input" id="api-key-input" placeholder="Colle ta clé API Agnes ici (sk-...)" autocomplete="off" spellcheck="false">
+    <button type="button" class="api-save-btn" id="api-save-btn">Enregistrer la clé</button>
+    <div class="api-status-line" id="api-status-line">
+        <span class="status-dot"></span>
+        <span id="api-status-text">Aucune clé API enregistrée</span>
+    </div>
+    <div class="api-hint">
+        Clé gratuite sur <a href="https://platform.agnes-ai.com" target="_blank">platform.agnes-ai.com</a> → Settings → API Keys
+    </div>
+    <div class="stat-line" id="stat-line">
+        <span>📊 Vitesse : <span id="stat-speed">en attente</span></span>
+        <span id="stat-samples">0 génération</span>
+    </div>
+    <div class="wake-status" id="wake-status">
+        <span id="wake-status-text">💤 Veille automatique</span>
+        <button type="button" id="wake-toggle-btn">Garder l'écran allumé</button>
+    </div>
+</div>
+
+<!-- UPLOAD -->
+<div class="upload-zone" id="upload-zone">
+    <input type="file" id="file-input" accept="image/*" multiple>
+    <div class="upload-icon">＋</div>
+    <div class="upload-text">Ajoute tes images</div>
+    <div class="upload-hint">Chaque image deviendra une vidéo Vibra</div>
+</div>
+<div class="images-grid" id="images-grid"></div>
+
+<!-- PERSONNAGES -->
+<div class="section open" id="sec-chars">
+    <div class="section-header" data-toggle="sec-chars">
+        <span class="section-title">👽 Personnages Vibra <span class="badge gold">requis</span></span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <div class="characters-grid" id="characters-grid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TYPE DE SCÈNE -->
+<div class="section open" id="sec-scene">
+    <div class="section-header" data-toggle="sec-scene">
+        <span class="section-title">🎬 Type de scène</span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <div class="scenes-grid" id="scenes-grid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- FORMAT -->
+<div class="section open" id="sec-format">
+    <div class="section-header" data-toggle="sec-format">
+        <span class="section-title">📐 Format & Durée</span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <div class="control-row">
+                <label class="control-label">Format de diffusion</label>
+                <div class="format-toggle" id="format-toggle">
+                    <button type="button" class="format-btn active" data-format="youtube">
+                        📺 YouTube <span class="ratio">16:9 horizontal</span>
+                    </button>
+                    <button type="button" class="format-btn" data-format="tiktok">
+                        📱 TikTok <span class="ratio">9:16 vertical</span>
+                    </button>
+                </div>
+            </div>
+            <div class="control-row">
+                <label class="control-label">Durée de la vidéo</label>
+                <select id="duration-select">
+                    <option value="121">5 secondes</option>
+                    <option value="153" selected>6,4 secondes (recommandé)</option>
+                    <option value="241">10 secondes</option>
+                </select>
+            </div>
+            <div class="control-row">
+                <label class="control-label">Intensité du mouvement</label>
+                <select id="intensity-select">
+                    <option value="subtle">Subtile</option>
+                    <option value="moderate" selected>Modérée (recommandé)</option>
+                    <option value="strong">Forte</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PROMPT PERSONNALISÉ -->
+<div class="section" id="sec-prompt">
+    <div class="section-header" data-toggle="sec-prompt">
+        <span class="section-title">✍️ Prompt personnalisé <span class="badge">optionnel</span></span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <textarea id="custom-prompt" placeholder="Décris une scène spécifique (optionnel). Ex: Ziggy découvre une fleur lumineuse dans la forêt magique…"></textarea>
+            <div class="api-hint" style="margin-top:0.5rem;">
+                💡 Si tu laisses vide, le prompt est construit automatiquement à partir du personnage + type de scène + règles Vibra.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BOUTON GÉNÉRER -->
+<button type="button" class="btn-primary" id="generate-btn" disabled>
+    🎬 Générer les vidéos
+</button>
+
+<button type="button" class="btn-stop" id="stop-btn">
+    ⏹ Arrêter la génération
+</button>
+
+<div class="queue" id="queue" style="display:none;"></div>
+
+<div class="gallery" id="gallery" style="display:none;">
+    <div class="section-title" style="margin-bottom:0.8rem;">Vidéos générées</div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+</div>
+
+<div class="status-bar" id="status-bar">
+    <div class="spinner"></div>
+    <span id="status-text">Préparation…</span>
+</div>
+
+<canvas id="noSleepCanvas" width="2" height="2"></canvas>
+<video id="noSleepVideo" playsinline muted loop></video>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CONFIGURATION API
+// ══════════════════════════════════════════════════════════════════
+const API_BASE = 'https://apihub.agnes-ai.com/v1';
+const POLL_BASE = 'https://apihub.agnes-ai.com/agnesapi';
+const MODEL_VIDEO = 'agnes-video-v2.0';
+const FRAME_RATE = 24;
+
+let createIntervalMs = 62000;
+const CREATE_INTERVAL_MIN = 62000;
+const CREATE_INTERVAL_MAX = 90000;
+const CREATE_INTERVAL_SAFE = 75000;
+const POLL_INTERVAL_SEC = 8;
+const MAX_POLL_ATTEMPTS = 100;
+
+const TIMING_CACHE_KEY = 'vibra_timing_cache_v1';
+const API_KEY_STORAGE = 'vibra_api_key';
+const WAKE_LOCK_PREF = 'vibra_wakelock';
+const MAX_VISIBLE_QUEUE = 30;
+const MAX_IMAGE_SIZE = 12 * 1024 * 1024;
+const THUMBNAIL_MAX_WIDTH = 200;
+
+// ══════════════════════════════════════════════════════════════════
+// UNIVERS VIBRA
+// ══════════════════════════════════════════════════════════════════
+const UNIVERSE = {
+    name: "Vibra",
+    series: "Ziggy — The Little Explorer",
+    target_age: "5-9",
+    visual_style: `Premium high-end 3D animated children's series. Soft rounded materials. Polished character modeling. Colorful cinematic lighting. Gentle global illumination. Soft shadows. Expressive eyes. Appealing child-friendly character design. Magical, warm and emotionally safe atmosphere.`,
+    avoid: "horror, violence, gore, weapons, scary faces, aggressive behavior, explosions, dark horror atmosphere, photorealism, adult themes, sexual content, dangerous objects, random text, watermarks",
+    formats: { youtube: "16:9", tiktok: "9:16" }
+};
+
+const CHARACTERS = {
+    "Ziggy": {
+        role: "main_character", emoji: "🤠",
+        color: "linear-gradient(135deg, #4ade80, #22c55e)",
+        master_prompt: `Ziggy, The Little Explorer, is a small adorable green alien cowboy designed for a premium 3D animated children's series. Ziggy has soft green skin, a rounded childlike face, very large expressive blue-green eyes, two green antennae with yellow tips, a brown cowboy hat with a small golden sheriff star on the front, a red neckerchief around his neck, a brown western vest, dark blue jeans, a golden belt buckle, and soft brown cowboy boots. He has cute childlike proportions, a slightly oversized head, a small body, short arms and legs, rounded hands, and a charming expressive silhouette. His personality is curious, brave, kind, optimistic, playful, slightly clumsy, and emotionally warm. Premium high-end 3D cartoon animation, soft rounded materials, polished character modeling, colorful cinematic lighting, soft shadows, gentle global illumination, expressive eyes, appealing children's animation design. Ziggy's character design must remain absolutely identical in every shot. Only his pose, facial expression, movement, camera angle, lighting, and environment may change.`,
+        negative_prompt: `Different character design, different outfit, missing cowboy hat, missing golden hat star, missing red neckerchief, missing vest, different skin color, different eye color, different body proportions, realistic alien, realistic human, teenager, adult proportions, scary face, horror, aggressive expression, sharp teeth, extra limbs, extra fingers, deformed hands, distorted eyes, inconsistent costume, photorealism, text, watermark.`
+    },
+    "Luma": {
+        role: "companion", emoji: "💜",
+        color: "linear-gradient(135deg, #c084fc, #a855f7)",
+        master_prompt: `Luma is a tiny adorable floating purple alien companion designed for a premium 3D animated children's series. Luma has a small rounded lavender-purple body, large shiny dark violet eyes, two tiny rounded ears, a small smiling mouth, short soft arms, and a gentle luminous aura around her body. Luma floats instead of walking. Her glow changes subtly with her emotions: soft lavender when calm, brighter violet when excited, warm pink-purple when happy, and dim lavender when worried. Luma is kind, observant, playful, emotionally sensitive, and slightly mischievous. Premium high-end 3D cartoon animation, soft rounded shapes, polished materials, gentle glow, colorful cinematic lighting, soft shadows, expressive face, safe and friendly children's animation. Luma's character design must remain absolutely identical in every shot. Only her expression, glow intensity, pose, movement, camera angle, lighting, and environment may change.`,
+        negative_prompt: `Different creature, different color, wings, fairy design, realistic animal, scary face, sharp teeth, aggressive expression, extra limbs, distorted eyes, inconsistent proportions, dark horror atmosphere, photorealism, text, watermark.`
+    },
+    "Bobo": {
+        role: "inventor", emoji: "🔧",
+        color: "linear-gradient(135deg, #38bdf8, #0ea5e9)",
+        master_prompt: `Bobo is a small adorable blue alien inventor designed for a premium 3D animated children's series. Bobo has bright sky-blue skin, a round face, large expressive amber eyes, two short rounded antennae, a small button nose, a wide friendly smile, and slightly oversized round goggles resting on his forehead. He wears a yellow utility vest over a cream shirt, orange shorts, soft brown boots, and a small tool belt filled with colorful harmless inventor tools. Bobo has cute childlike proportions, a slightly oversized head, short arms and legs, rounded hands, and a funny expressive silhouette. His personality is clever, enthusiastic, inventive, funny, optimistic, and slightly clumsy. Premium high-end 3D cartoon animation, soft rounded materials, polished character modeling, colorful cinematic lighting, soft shadows, gentle global illumination, expressive eyes, safe and friendly children's animation. Bobo's character design must remain absolutely identical in every shot. Only his pose, facial expression, movement, camera angle, lighting, and environment may change.`,
+        negative_prompt: `Different outfit, different skin color, missing goggles, realistic scientist, adult proportions, scary face, dangerous machine, weapons, explosions, sharp objects, extra limbs, deformed hands, photorealism, horror, text, watermark.`
+    },
+    "Lost Star": {
+        role: "story_character", emoji: "⭐",
+        color: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+        master_prompt: `The Lost Star is a tiny adorable golden star character designed for a premium 3D animated children's series. The Lost Star has five soft rounded points, a warm golden-yellow body, a small cute face, large shiny dark brown eyes, tiny soft eyebrows, and a small expressive smiling mouth. The star emits a gentle golden glow. Its glow becomes very dim when sad or afraid, and bright and warm when it feels safe, loved, and happy. The Lost Star is innocent, gentle, shy, emotional, and hopeful. Premium high-end 3D cartoon animation, soft rounded edges, polished golden material, gentle magical glow, soft shadows, colorful cinematic lighting, safe and comforting children's animation. The Lost Star's character design must remain absolutely identical in every shot. Only its expression, glow intensity, pose, movement, camera angle, lighting, and environment may change.`,
+        negative_prompt: `Sharp star points, realistic celestial object, fire, explosion, scary face, angry expression, dark horror atmosphere, metallic weapon, distorted face, extra points, missing face, photorealism, text, watermark.`
+    }
+};
+
+const SCENE_TYPES = [
+    { id: 'establishing', name: 'Monde de Vibra', emoji: '🌍', desc: 'Plan d\'ouverture magique',
+      camera: 'Slow forward dolly from a slightly elevated angle, revealing the magical landscape. Smooth cinematic movement.', movement: 'Environment only: subtle grass, floating particles, gentle glow.', expression: 'No characters visible yet.' },
+    { id: 'discovery', name: 'Découverte', emoji: '✨', desc: 'Émerveillement et curiosité',
+      camera: 'Slow push-in toward the character, emphasizing wonder. Very gentle.', movement: 'Character moves with curious, expressive, child-friendly energy.', expression: 'Wide-eyed wonder, curious and amazed expression, gentle smile.' },
+    { id: 'emotional', name: 'Émotion', emoji: '💛', desc: 'Moment tendre et empathique',
+      camera: 'Intimate close-up, breathing with the character. Warm and gentle.', movement: 'Subtle breathing, soft head tilt, tender gestures.', expression: 'Tender, empathetic expression, eyes shining with gentle emotion.' },
+    { id: 'meeting', name: 'Rencontre', emoji: '🤝', desc: 'Rencontre amicale',
+      camera: 'Medium shot, both characters visible. Warm and welcoming framing.', movement: 'Friendly gestures, warm smiles, gentle approach.', expression: 'Happy, welcoming, curious expressions.' },
+    { id: 'challenge', name: 'Défi', emoji: '🎯', desc: 'Petit obstacle à résoudre',
+      camera: 'Slight handheld, breathing with the characters. Warm and engaged.', movement: 'Thinking gestures, teamwork, cooperation.', expression: 'Thoughtful, focused, determined but kind expressions.' },
+    { id: 'cooperation', name: 'Coopération', emoji: '🌟', desc: 'Union des forces',
+      camera: 'Slow orbital movement around the group. Magical and uplifting.', movement: 'Combining energy, joining hands, magical light effects.', expression: 'Joyful, determined, united expressions.' },
+    { id: 'resolution', name: 'Résolution', emoji: '🎉', desc: 'Joie et célébration',
+      camera: 'Slight pull-back, revealing the joyful group. Warm and triumphant.', movement: 'Joyful celebration, gentle hugs, happy jumps.', expression: 'Pure joy, warm smiles, eyes bright with happiness.' },
+    { id: 'message', name: 'Message final', emoji: '💫', desc: 'Plan poétique final',
+      camera: 'Slow tilt up toward the starry sky. Dreamy and poetic.', movement: 'Subtle magical sparkles, gentle glow, peaceful atmosphere.', expression: 'Serene, peaceful, hopeful expression.' }
+];
+
+// ══════════════════════════════════════════════════════════════════
+// ÉTAT GLOBAL
+// ══════════════════════════════════════════════════════════════════
+const state = {
+    images: [],
+    isRunning: false,
+    stopRequested: false,
+    queue: [],
+    completed: 0,
+    failed: 0,
+    selectedCharacters: ['Ziggy'],
+    selectedSceneType: 'discovery',
+    format: 'youtube',
+    durationFrames: 153,
+    intensity: 'moderate',
+    customPrompt: '',
+    isLoadingImages: false
+};
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITAIRES
+// ══════════════════════════════════════════════════════════════════
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function log(msg) { console.log('[Vibra] ' + msg); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function randomItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function formatEta(seconds) {
+    if (seconds < 60) return Math.round(seconds) + 's';
+    const m = Math.floor(seconds / 60);
+    const s = Math.round(seconds % 60);
+    return m + 'm' + (s > 0 ? ' ' + s + 's' : '');
+}
+function setStatus(text) {
+    const bar = document.getElementById('status-bar');
+    const txt = document.getElementById('status-text');
+    if (!bar || !txt) return;
+    if (text) { bar.classList.add('visible'); txt.textContent = text; }
+    else bar.classList.remove('visible');
+}
+let toastTimeout = null;
+function showToast(message, type = 'success', duration = 2500) {
+    const toast = document.getElementById('toast');
+    const icon = document.getElementById('toast-icon');
+    const text = document.getElementById('toast-text');
+    if (!toast) return;
+    toast.classList.remove('visible', 'success', 'error', 'warn');
+    void toast.offsetWidth;
+    const icons = { success: '✓', error: '✕', warn: '⚠' };
+    icon.textContent = icons[type] || '✓';
+    text.textContent = message;
+    toast.classList.add(type);
+    requestAnimationFrame(() => toast.classList.add('visible'));
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.classList.remove('visible'), duration);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CLÉ API
+// ══════════════════════════════════════════════════════════════════
+function getApiKey() { try { return (localStorage.getItem(API_KEY_STORAGE) || '').trim(); } catch (e) { return ''; } }
+function saveApiKey() {
+    const input = document.getElementById('api-key-input');
+    if (!input) return;
+    const key = input.value.trim();
+    if (!key) { try { localStorage.removeItem(API_KEY_STORAGE); } catch (e) {} updateApiPanel(); showToast('Clé supprimée', 'warn'); return; }
+    if (!key.startsWith('sk-')) { if (!confirm('La clé ne commence pas par "sk-". Sauvegarder quand même ?')) return; }
+    try { localStorage.setItem(API_KEY_STORAGE, key); updateApiPanel(); showToast('Clé API enregistrée ✓', 'success'); input.blur(); }
+    catch (e) { showToast('Erreur de sauvegarde', 'error'); }
+}
+function updateApiPanel() {
+    const panel = document.getElementById('api-panel');
+    const input = document.getElementById('api-key-input');
+    const statusLine = document.getElementById('api-status-line');
+    const statusText = document.getElementById('api-status-text');
+    const key = getApiKey();
+    if (!panel || !input || !statusLine || !statusText) return;
+    if (key) {
+        panel.classList.add('ok'); statusLine.classList.add('ok');
+        statusText.textContent = 'Clé active · ' + key.slice(0, 8) + '…' + key.slice(-4);
+        input.value = key; input.placeholder = '';
+    } else {
+        panel.classList.remove('ok'); statusLine.classList.remove('ok');
+        statusText.textContent = 'Aucune clé API enregistrée';
+        input.value = ''; input.placeholder = 'Colle ta clé API Agnes ici (sk-...)';
+    }
+    updateGenerateBtn();
+}
+function updateGenerateBtn() {
+    const btn = document.getElementById('generate-btn');
+    if (!btn) return;
+    const hasImages = state.images.length > 0;
+    const hasKey = !!getApiKey();
+    const hasChar = state.selectedCharacters.length > 0;
+    btn.disabled = !hasImages || !hasKey || !hasChar || state.isRunning || state.isLoadingImages;
+    if (state.isLoadingImages) btn.textContent = 'Chargement des images… (' + state.images.length + ')';
+    else if (state.isRunning) { const total = state.queue.length; const done = state.completed + state.failed; btn.textContent = 'Génération… (' + done + '/' + total + ')'; }
+    else if (!hasKey) btn.textContent = 'Ajoute ta clé API';
+    else if (!hasImages) btn.textContent = 'Ajoute des images';
+    else if (!hasChar) btn.textContent = 'Choisis un personnage';
+    else btn.textContent = '🎬 Générer ' + state.images.length + ' vidéo' + (state.images.length > 1 ? 's' : '');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TRAITEMENT DES IMAGES
+// ══════════════════════════════════════════════════════════════════
+function fileToDataUri(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = () => reject(new Error('Erreur lecture'));
+        reader.readAsDataURL(file);
+    });
+}
+function generateThumbnail(dataUri) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ratio = img.height / img.width;
+                canvas.width = THUMBNAIL_MAX_WIDTH;
+                canvas.height = Math.round(THUMBNAIL_MAX_WIDTH * ratio);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            } catch (e) { resolve(dataUri); }
+        };
+        img.onerror = () => resolve(dataUri);
+        img.src = dataUri;
+    });
+}
+async function processOneFile(file) {
+    if (!file.type.startsWith('image/')) return null;
+    if (file.size > MAX_IMAGE_SIZE) { log('Image trop lourde : ' + file.name); return null; }
+    try {
+        const dataUri = await fileToDataUri(file);
+        const thumbnail = await generateThumbnail(dataUri);
+        return { file, dataUri, thumbnail, id: Date.now() + Math.random() };
+    } catch (e) { log('Erreur ' + file.name + ' : ' + e.message); return null; }
+}
+async function handleFiles(files) {
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!imageFiles.length) return;
+    state.isLoadingImages = true;
+    updateGenerateBtn();
+    setStatus('Chargement de ' + imageFiles.length + ' image' + (imageFiles.length > 1 ? 's' : '') + '…');
+    const uploadZone = document.getElementById('upload-zone');
+    uploadZone.classList.add('loading');
+    const BATCH = 5; let processed = 0;
+    for (let i = 0; i < imageFiles.length; i += BATCH) {
+        const batch = imageFiles.slice(i, i + BATCH);
+        const results = await Promise.allSettled(batch.map(f => processOneFile(f)));
+        for (const r of results) { if (r.status === 'fulfilled' && r.value) { state.images.push(r.value); processed++; } }
+        renderImages();
+        setStatus('Chargement… ' + processed + '/' + imageFiles.length);
+    }
+    state.isLoadingImages = false;
+    uploadZone.classList.remove('loading');
+    setStatus(null);
+    updateGenerateBtn();
+}
+function removeImage(id) {
+    state.images = state.images.filter(img => img.id !== id);
+    renderImages();
+    updateGenerateBtn();
+}
+function renderImages() {
+    const grid = document.getElementById('images-grid');
+    grid.innerHTML = state.images.map(img =>
+        '<div class="image-card"><img src="' + (img.thumbnail || img.dataUri) + '" alt="" loading="lazy"><button class="remove-btn" data-remove="' + img.id + '">✕</button></div>'
+    ).join('');
+    grid.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); removeImage(parseFloat(btn.dataset.remove)); });
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDU PERSONNAGES & SCÈNES
+// ══════════════════════════════════════════════════════════════════
+function renderCharacters() {
+    const grid = document.getElementById('characters-grid');
+    grid.innerHTML = Object.entries(CHARACTERS).map(([name, c]) =>
+        '<div class="character-card ' + (state.selectedCharacters.includes(name) ? 'selected' : '') + '" data-char="' + esc(name) + '">' +
+        '<div class="c-check">✓</div>' +
+        '<div class="c-avatar" style="background:' + c.color + '">' + c.emoji + '</div>' +
+        '<div class="c-name">' + esc(name) + '</div>' +
+        '<div class="c-role">' + esc(c.role.replace('_', ' ')) + '</div>' +
+        '</div>'
+    ).join('');
+    grid.querySelectorAll('.character-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const name = card.dataset.char;
+            const idx = state.selectedCharacters.indexOf(name);
+            if (idx >= 0) state.selectedCharacters.splice(idx, 1);
+            else state.selectedCharacters.push(name);
+            renderCharacters();
+            updateGenerateBtn();
+        });
+    });
+}
+function renderSceneTypes() {
+    const grid = document.getElementById('scenes-grid');
+    grid.innerHTML = SCENE_TYPES.map(s =>
+        '<div class="scene-type-card ' + (state.selectedSceneType === s.id ? 'selected' : '') + '" data-scene="' + s.id + '">' +
+        '<div class="st-emoji">' + s.emoji + '</div>' +
+        '<div class="st-name">' + esc(s.name) + '</div>' +
+        '<div class="st-desc">' + esc(s.desc) + '</div>' +
+        '</div>'
+    ).join('');
+    grid.querySelectorAll('.scene-type-card').forEach(card => {
+        card.addEventListener('click', () => { state.selectedSceneType = card.dataset.scene; renderSceneTypes(); });
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CONSTRUCTION DU PROMPT VIBRA
+// ══════════════════════════════════════════════════════════════════
+function buildVibraPrompt(imageIndex) {
+    const scene = SCENE_TYPES.find(s => s.id === state.selectedSceneType) || SCENE_TYPES[1];
+    const formatRatio = UNIVERSE.formats[state.format];
+
+    let characterInfo = '';
+    for (const name of state.selectedCharacters) {
+        const c = CHARACTERS[name];
+        if (!c) continue;
+        characterInfo += `\n\nCHARACTER: ${name}\n\nMASTER CHARACTER IDENTITY:\n${c.master_prompt}\n\nCHARACTER NEGATIVE PROMPT:\n${c.negative_prompt}`;
+    }
+
+    const intensityMap = {
+        subtle: 'very subtle movement, barely perceptible change, minimal animation',
+        moderate: 'moderate movement, clear but controlled motion',
+        strong: 'strong dynamic movement, energetic motion'
+    };
+
+    let customPart = '';
+    if (state.customPrompt && state.customPrompt.trim()) {
+        customPart = `\n\nADDITIONAL ARTISTIC DIRECTION (highest priority):\n${state.customPrompt.trim()}`;
+    }
+
+    const prompt = `CREATE ONE COMPLETE VIDEO SHOT.
+
+SERIES:
+${UNIVERSE.series}
+
+UNIVERSE:
+${UNIVERSE.name}
+
+TARGET AUDIENCE:
+Children aged ${UNIVERSE.target_age}.
+
+FRAME FORMAT:
+${formatRatio} ${state.format === 'youtube' ? 'horizontal' : 'vertical'} aspect ratio.
+
+--------------------------------------------------
+VISUAL SCENE
+--------------------------------------------------
+
+Scene type: ${scene.name}
+Scene description: ${scene.desc}
+${characterInfo}
+
+--------------------------------------------------
+CHARACTER EXPRESSION
+--------------------------------------------------
+
+${scene.expression}
+
+--------------------------------------------------
+CHARACTER MOVEMENT
+--------------------------------------------------
+
+${scene.movement}
+${intensityMap[state.intensity] || intensityMap.moderate}
+
+--------------------------------------------------
+CAMERA
+--------------------------------------------------
+
+${scene.camera}
+
+The camera movement must be smooth, cinematic and appropriate for children.
+
+--------------------------------------------------
+VOICE
+--------------------------------------------------
+
+Warm, natural, expressive English voice. Clear pronunciation. Child-friendly delivery. No robotic voice. No aggressive voice. No frightening voice.
+
+--------------------------------------------------
+MUSIC
+--------------------------------------------------
+
+Soft magical children's music with gentle bells, warm piano notes, delicate chimes, and a dreamy floating atmosphere. The music must remain below the dialogue.
+
+--------------------------------------------------
+SOUND EFFECTS
+--------------------------------------------------
+
+Gentle environmental sound effects: soft wind, magical sparkles, distant chimes, and subtle ambient textures.
+
+--------------------------------------------------
+GLOBAL VISUAL STYLE
+--------------------------------------------------
+
+${UNIVERSE.visual_style}
+
+--------------------------------------------------
+SAFETY AND CONTINUITY
+--------------------------------------------------
+
+Every episode must contain: a simple problem, a discovery, an emotional moment, a small challenge, cooperation or learning, a satisfying resolution, and a positive message.
+
+The story must be understandable for children aged 5-9.
+
+Characters should solve problems through friendship, curiosity, cooperation, kindness, creativity, courage, and communication.
+
+Never solve problems through violence.
+
+The universe must remain magical and optimistic.
+
+Never change the established appearance of any recurring character.
+
+Never introduce a different costume, different face, different colors, different proportions, or different animation style.
+
+Avoid: ${UNIVERSE.avoid}
+
+No watermark. No random text. No misspelled text.${customPart}`;
+
+    return prompt.trim();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CACHE TEMPS
+// ══════════════════════════════════════════════════════════════════
+function loadTimingCache() { try { return JSON.parse(localStorage.getItem(TIMING_CACHE_KEY) || '{}'); } catch (e) { return {}; } }
+function saveTimingCache(c) { try { localStorage.setItem(TIMING_CACHE_KEY, JSON.stringify(c)); } catch (e) {} }
+function recordGenerationTime(numFrames, durationMs) {
+    const cache = loadTimingCache();
+    const key = String(numFrames);
+    if (!cache[key]) cache[key] = [];
+    cache[key].push(durationMs);
+    if (cache[key].length > 10) cache[key] = cache[key].slice(-10);
+    saveTimingCache(cache);
+    updateTimingDisplay();
+}
+function estimateGenerationTime(numFrames) {
+    const cache = loadTimingCache();
+    const samples = cache[String(numFrames)];
+    if (samples && samples.length > 0) {
+        const sorted = [...samples].sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 === 0 ? (sorted[mid-1] + sorted[mid]) / 2 : sorted[mid];
+    }
+    return 30000 + numFrames * 500;
+}
+function updateTimingDisplay() {
+    const cache = loadTimingCache();
+    const all = Object.values(cache).flat();
+    const speedEl = document.getElementById('stat-speed');
+    const samplesEl = document.getElementById('stat-samples');
+    if (!speedEl || !samplesEl) return;
+    if (all.length === 0) { speedEl.textContent = 'en attente'; samplesEl.textContent = '0 génération'; return; }
+    const avg = all.reduce((a, b) => a + b, 0) / all.length;
+    speedEl.textContent = (avg / 1000).toFixed(1) + ' s en moyenne';
+    samplesEl.textContent = all.length + ' génération' + (all.length > 1 ? 's' : '');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ANTI-VEILLE
+// ══════════════════════════════════════════════════════════════════
+let wakeLockSentinel = null, wakeLockEnabled = false, canvasStream = null, canvasInterval = null;
+function isWakeLockSupported() { return 'wakeLock' in navigator && typeof navigator.wakeLock.request === 'function'; }
+async function requestWakeLockAPI() {
+    if (!isWakeLockSupported()) return false;
+    try { wakeLockSentinel = await navigator.wakeLock.request('screen'); wakeLockSentinel.addEventListener('release', () => { wakeLockSentinel = null; updateWakeStatus(); }); return true; }
+    catch (e) { return false; }
+}
+async function releaseWakeLockAPI() { if (wakeLockSentinel) { try { await wakeLockSentinel.release(); } catch (e) {} wakeLockSentinel = null; } }
+function startCanvasStream() {
+    if (canvasStream) return true;
+    try {
+        const canvas = document.getElementById('noSleepCanvas');
+        const video = document.getElementById('noSleepVideo');
+        if (!canvas || !video) return false;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return false;
+        ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (typeof canvas.captureStream !== 'function') return false;
+        canvasStream = canvas.captureStream(1);
+        let toggle = false;
+        canvasInterval = setInterval(() => { toggle = !toggle; ctx.fillStyle = toggle ? '#000000' : '#010101'; ctx.fillRect(0, 0, canvas.width, canvas.height); }, 1000);
+        video.srcObject = canvasStream; video.muted = true; video.playsInline = true;
+        const p = video.play(); if (p && p.catch) p.catch(() => {});
+        return true;
+    } catch (e) { return false; }
+}
+function stopCanvasStream() {
+    if (canvasInterval) { clearInterval(canvasInterval); canvasInterval = null; }
+    const video = document.getElementById('noSleepVideo');
+    if (video) { try { video.pause(); video.srcObject = null; } catch (e) {} }
+    if (canvasStream) { try { canvasStream.getTracks().forEach(t => t.stop()); } catch (e) {} canvasStream = null; }
+}
+async function activateWakeLock() {
+    let success = false;
+    if (isWakeLockSupported()) success = await requestWakeLockAPI();
+    if (!success) success = startCanvasStream();
+    if (!success && !canvasStream) success = startCanvasStream();
+    return success;
+}
+async function deactivateWakeLock() { await releaseWakeLockAPI(); stopCanvasStream(); }
+function updateWakeStatus() {
+    const el = document.getElementById('wake-status');
+    const txt = document.getElementById('wake-status-text');
+    const btn = document.getElementById('wake-toggle-btn');
+    if (!el || !txt || !btn) return;
+    el.classList.remove('active', 'warn');
+    const hasMech = isWakeLockSupported() || (document.getElementById('noSleepCanvas')?.captureStream);
+    if (!hasMech) { el.classList.add('warn'); txt.textContent = '⚠️ Non supporté'; btn.style.display = 'none'; return; }
+    btn.style.display = 'inline-block';
+    const isActive = wakeLockSentinel !== null || canvasStream !== null;
+    if (wakeLockEnabled && isActive) { el.classList.add('active'); txt.textContent = '✅ Écran allumé'; btn.textContent = 'Désactiver'; }
+    else if (wakeLockEnabled && !isActive) { el.classList.add('warn'); txt.textContent = '⏳ En attente'; btn.textContent = 'Désactiver'; }
+    else { txt.textContent = '💤 Veille auto'; btn.textContent = 'Garder l\'écran allumé'; }
+}
+async function toggleWakeLock() {
+    if (wakeLockEnabled) { wakeLockEnabled = false; await deactivateWakeLock(); try { localStorage.setItem(WAKE_LOCK_PREF, '0'); } catch (e) {} showToast('Veille auto réactivée', 'warn'); }
+    else { wakeLockEnabled = true; const ok = await activateWakeLock(); try { localStorage.setItem(WAKE_LOCK_PREF, '1'); } catch (e) {} showToast(ok ? 'L\'écran va rester allumé' : 'Activez manuellement', ok ? 'success' : 'warn'); }
+    updateWakeStatus();
+}
+document.addEventListener('visibilitychange', async () => { if (document.visibilityState === 'visible' && wakeLockEnabled) { await activateWakeLock(); updateWakeStatus(); } });
+async function ensureWakeLockActive() { if (!wakeLockEnabled) return; if (wakeLockSentinel === null && canvasStream === null) { await activateWakeLock(); updateWakeStatus(); } }
+
+// ══════════════════════════════════════════════════════════════════
+// API AGNES
+// ══════════════════════════════════════════════════════════════════
+async function apiFetch(url, options = {}, label = 'API') {
+    for (let attempt = 0; attempt < 7; attempt++) {
+        if (state.stopRequested) throw new Error('Arrêt demandé');
+        try {
+            const res = await fetch(url, options);
+            if (res.status === 429) {
+                if (createIntervalMs < CREATE_INTERVAL_SAFE) createIntervalMs = Math.min(createIntervalMs + 8000, CREATE_INTERVAL_MAX);
+                const wait = [15, 30, 45, 60, 90, 120, 180][Math.min(attempt, 6)];
+                setStatus('L\'IA se prépare… (' + wait + 's)');
+                await sleep(wait * 1000);
+                continue;
+            }
+            if (res.status === 503) {
+                const wait = [5, 10, 15, 20, 30, 45][Math.min(attempt, 5)];
+                setStatus('Préparation… (' + wait + 's)');
+                await sleep(wait * 1000);
+                continue;
+            }
+            return res;
+        } catch (e) {
+            if (e.message === 'Arrêt demandé') throw e;
+            const wait = [3, 5, 8, 12, 20, 30][Math.min(attempt, 5)];
+            setStatus('Connexion… (' + wait + 's)');
+            await sleep(wait * 1000);
+        }
+    }
+    return fetch(url, options);
+}
+
+async function createVideoTask(imageDataUri, prompt) {
+    const body = { model: MODEL_VIDEO, prompt, image: imageDataUri, num_frames: state.durationFrames, frame_rate: FRAME_RATE };
+    const res = await apiFetch(API_BASE + '/videos', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getApiKey(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    }, 'Création');
+    if (!res.ok) { const err = await res.text(); throw new Error('HTTP ' + res.status + ' — ' + err.slice(0, 200)); }
+    const data = await res.json();
+    const videoId = data.video_id || data.id || data.task_id;
+    if (!videoId) throw new Error('Pas de video_id');
+    return videoId;
+}
+
+async function pollVideo(videoId, onProgress) {
+    const estimatedMs = estimateGenerationTime(state.durationFrames);
+    let remaining = Math.max(20, Math.floor((estimatedMs / 1000) * 0.8));
+    while (remaining > 0) {
+        if (state.stopRequested) throw new Error('Arrêt demandé');
+        onProgress('Préparation… — ' + remaining + 's');
+        await sleep(1000); remaining--;
+    }
+    for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+        if (state.stopRequested) throw new Error('Arrêt demandé');
+        if (attempt > 0) {
+            let r = POLL_INTERVAL_SEC;
+            while (r > 0) { if (state.stopRequested) throw new Error('Arrêt demandé'); onProgress('L\'image prend vie… — ' + r + 's'); await sleep(1000); r--; }
+        }
+        const url = POLL_BASE + '?video_id=' + encodeURIComponent(videoId) + '&model_name=' + encodeURIComponent(MODEL_VIDEO);
+        const res = await apiFetch(url, { method: 'GET', headers: { 'Authorization': 'Bearer ' + getApiKey() } }, 'Polling');
+        const d = await res.json();
+        const status = d.status || 'unknown';
+        const progress = d.progress || 0;
+        onProgress('Création… — ' + progress + '%');
+        if (status === 'completed' || status === 'succeeded' || status === 'done') {
+            const videoUrl = (d.metadata && d.metadata.url) || d.url || (d.output && d.output.url);
+            if (!videoUrl) throw new Error('Terminé mais pas d\'URL');
+            return videoUrl;
+        }
+        if (status === 'failed' || status === 'error' || status === 'cancelled') throw new Error('Échec (' + status + ')');
+    }
+    throw new Error('Délai maximal dépassé');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// FILE D'ATTENTE
+// ══════════════════════════════════════════════════════════════════
+function renderQueue() {
+    const queueEl = document.getElementById('queue');
+    if (!state.queue.length) { queueEl.style.display = 'none'; return; }
+    queueEl.style.display = 'block';
+    const total = state.queue.length;
+    const done = state.completed + state.failed;
+    const estGen = estimateGenerationTime(state.durationFrames) / 1000;
+    const pending = total - done - state.queue.filter(q => q.status === 'processing').length;
+    let eta = 0;
+    if (pending > 0) eta = (pending * createIntervalMs / 1000) + estGen;
+    let html = '<div class="queue-summary"><span class="progress-text">Progression : ' + done + '/' + total + '</span><span class="eta-text">' + (done < total ? '≈ ' + formatEta(eta) + ' restant' : 'Terminé') + '</span></div>';
+    const visible = state.queue.slice(0, MAX_VISIBLE_QUEUE);
+    html += visible.map(item => {
+        let icon = '○', statusText = 'En attente', cls = 'pending';
+        if (item.status === 'creating') { icon = '◐'; statusText = 'Préparation…'; cls = 'creating'; }
+        else if (item.status === 'processing') { icon = '◐'; statusText = item.progress || 'En cours…'; cls = 'processing'; }
+        else if (item.status === 'done') { icon = '●'; statusText = 'Terminé'; cls = 'done'; }
+        else if (item.status === 'failed') { icon = '✕'; statusText = 'Échec'; cls = 'failed'; }
+        return '<div class="queue-item ' + cls + '"><div class="q-icon">' + icon + '</div><div class="q-name">Image ' + (item.imageIndex + 1) + '</div><div class="q-status">' + esc(statusText) + '</div></div>';
+    }).join('');
+    queueEl.innerHTML = html;
+}
+
+function addToGallery(videoUrl, label) {
+    const galleryEl = document.getElementById('gallery');
+    const galleryGrid = document.getElementById('gallery-grid');
+    galleryEl.style.display = 'block';
+    const el = document.createElement('div');
+    el.className = 'gallery-item';
+    el.innerHTML = '<video controls preload="metadata" muted playsinline><source src="' + videoUrl + '" type="video/mp4"></video><div class="g-caption">' + esc(label) + '</div>';
+    galleryGrid.appendChild(el);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PIPELINE GÉNÉRATION
+// ══════════════════════════════════════════════════════════════════
+async function createTaskOnly(item) {
+    item.status = 'creating'; item.progress = 'Préparation…'; renderQueue();
+    const prompt = buildVibraPrompt(item.imageIndex);
+    item.prompt = prompt;
+    const videoId = await createVideoTask(item.image.dataUri, prompt);
+    item.videoId = videoId;
+    item.startTime = Date.now();
+    item.status = 'processing'; item.progress = 'En cours…'; renderQueue();
+    return videoId;
+}
+
+async function pollTaskAndDisplay(item) {
+    try {
+        const videoUrl = await pollVideo(item.videoId, (prog) => { item.progress = prog; renderQueue(); });
+        const elapsed = Date.now() - item.startTime;
+        recordGenerationTime(state.durationFrames, elapsed);
+        item.status = 'done'; item.videoUrl = videoUrl; item.progress = 'Terminé';
+        state.completed++; renderQueue(); updateGenerateBtn();
+        addToGallery(videoUrl, 'Image ' + (item.imageIndex + 1));
+    } catch (e) {
+        if (e.message === 'Arrêt demandé') { item.status = 'failed'; item.progress = 'Arrêté'; }
+        else { item.status = 'failed'; item.progress = 'Échec'; state.failed++; }
+        renderQueue(); updateGenerateBtn();
+    }
+}
+
+async function startGeneration() {
+    if (state.isRunning || !state.images.length) return;
+    if (!getApiKey()) { showToast('Ajoute d\'abord ta clé API', 'error'); document.getElementById('api-key-input').focus(); return; }
+    if (!state.selectedCharacters.length) { showToast('Choisis au moins un personnage', 'error'); return; }
+
+    state.customPrompt = document.getElementById('custom-prompt').value.trim();
+    state.isRunning = true; state.stopRequested = false;
+    state.completed = 0; state.failed = 0;
+    createIntervalMs = CREATE_INTERVAL_MIN;
+
+    state.queue = state.images.map((img, i) => ({ imageIndex: i, image: img, status: 'pending', progress: null, videoId: null, videoUrl: null, prompt: null, startTime: null }));
+
+    document.getElementById('gallery-grid').innerHTML = '';
+    document.getElementById('gallery').style.display = 'none';
+    document.getElementById('stop-btn').classList.add('visible');
+    document.getElementById('generate-btn').disabled = true;
+
+    await ensureWakeLockActive();
+    renderQueue(); updateGenerateBtn();
+
+    const totalStart = Date.now();
+    const pollingTasks = [];
+
+    try {
+        for (let i = 0; i < state.queue.length; i++) {
+            if (state.stopRequested) break;
+            const item = state.queue[i];
+            try { await createTaskOnly(item); pollingTasks.push(pollTaskAndDisplay(item)); }
+            catch (e) {
+                if (e.message === 'Arrêt demandé') break;
+                item.status = 'failed'; item.progress = 'Échec'; state.failed++;
+                renderQueue(); updateGenerateBtn();
+            }
+            if (i < state.queue.length - 1 && !state.stopRequested) {
+                const waitSec = Math.ceil(createIntervalMs / 1000);
+                for (let r = waitSec; r > 0; r--) {
+                    if (state.stopRequested) break;
+                    setStatus('Pause créative… — Image ' + (i + 2) + '/' + state.queue.length + ' dans ' + r + 's');
+                    await sleep(1000);
+                }
+            }
+        }
+        if (pollingTasks.length > 0) { setStatus('Finalisation…'); await Promise.allSettled(pollingTasks); }
+    } catch (e) { log('Erreur globale : ' + e.message); }
+
+    const totalElapsed = (Date.now() - totalStart) / 1000;
+    const summary = state.stopRequested ? 'Arrêté — ' + state.completed + '/' + state.queue.length : '✦ ' + state.completed + '/' + state.queue.length + ' vidéos en ' + formatEta(totalElapsed) + ' ✦';
+    setStatus(summary); await sleep(4000); setStatus(null);
+
+    state.isRunning = false; state.stopRequested = false;
+    document.getElementById('stop-btn').classList.remove('visible');
+    updateGenerateBtn();
+    showToast(state.completed + ' vidéo' + (state.completed > 1 ? 's' : '') + ' créée' + (state.completed > 1 ? 's' : ''), 'success');
+}
+
+function stopGeneration() {
+    if (!state.isRunning) return;
+    state.stopRequested = true;
+    setStatus('Arrêt en cours…');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INITIALISATION
+// ══════════════════════════════════════════════════════════════════
+(function init() {
+    document.getElementById('api-save-btn').addEventListener('click', saveApiKey);
+    document.getElementById('stop-btn').addEventListener('click', stopGeneration);
+
+    const apiInput = document.getElementById('api-key-input');
+    apiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); saveApiKey(); } });
+
+    document.querySelectorAll('[data-toggle]').forEach(header => {
+        header.addEventListener('click', () => { document.getElementById(header.dataset.toggle).classList.toggle('open'); });
+    });
+
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('file-input');
+    uploadZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => { handleFiles(e.target.files); fileInput.value = ''; });
+
+    document.getElementById('duration-select').addEventListener('change', e => { state.durationFrames = parseInt(e.target.value, 10); });
+    document.getElementById('intensity-select').addEventListener('change', e => { state.intensity = e.target.value; });
+    document.getElementById('custom-prompt').addEventListener('input', e => { state.customPrompt = e.target.value; });
+
+    document.querySelectorAll('.format-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.format = btn.dataset.format;
+        });
+    });
+
+    document.getElementById('generate-btn').addEventListener('click', startGeneration);
+    document.getElementById('wake-toggle-btn').addEventListener('click', toggleWakeLock);
+
+    try { const saved = localStorage.getItem(WAKE_LOCK_PREF); wakeLockEnabled = saved === '1'; } catch (e) {}
+    if (wakeLockEnabled) activateWakeLock().then(() => updateWakeStatus());
+
+    updateApiPanel();
+    updateTimingDisplay();
+    updateWakeStatus();
+    renderCharacters();
+    renderSceneTypes();
+    renderImages();
+    renderQueue();
+
+    log('Vibra Studio prêt ✓');
+})();
+</script>
+
+</body>
+</html>
